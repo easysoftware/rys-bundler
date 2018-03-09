@@ -22,17 +22,20 @@ module RysBundler
         end
       end
 
+      # Select only missing dependecies so user can
+      # rewrite each dependecny in main gems.rb
       plugin_dependencies = plugin_dependencies.uniq(&:name)
       plugin_dependencies.reject! do |dep1|
-        dependencies.exist? do |dep2|
+        dependencies.any? do |dep2|
           dep1.name == dep2.name
         end
       end
 
+      # Concat them to main Bundler.definition.dependecies
       dependencies.concat(plugin_dependencies)
 
-      # To ensure main budler download plugins
-      # Bundler.definition.instance_eval{ @dependency_changes = true }
+      # To ensure main bundler download plugins
+      Bundler.definition.instance_eval{ @dependency_changes = true }
     end
 
   end

@@ -3,6 +3,7 @@ module RysBundler
     class Rys
 
       def exec(command, args)
+        puts 'Rys bundler'
       end
 
     end
