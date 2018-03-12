@@ -1,10 +1,14 @@
 $:.push File.expand_path('lib', __dir__)
-require 'rys_bundler'
+require 'rys/bundler'
 
 # Commands
-Bundler::Plugin.add_command('rys', RysBundler::Commands::Rys)
+Bundler::Plugin.add_command('rys', Rys::Bundler::Commands::Rys)
 
 # Hooks
 Bundler::Plugin.add_hook('before-install-all') do |dependencies|
-  RysBundler::Hooks.before_install_all(dependencies)
+  Rys::Bundler::Hooks.before_install_all(dependencies)
+end
+
+Bundler::Plugin.add_hook('rys-gemfile') do |dsl|
+  Rys::Bundler::Hooks.rys_gemfile(dsl)
 end
