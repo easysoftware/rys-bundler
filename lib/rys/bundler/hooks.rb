@@ -30,6 +30,8 @@ module Rys
             definition = ::Bundler::Dsl.evaluate(gems_rb, ::Bundler.default_lockfile, true)
             rys_dependecies = definition.dependencies.select{|dep| dep.groups.include?(:rys) }
             plugin_dependencies.concat(rys_dependecies)
+
+            # TODO: Maybe this should be done after `dependencies.concat`
             merge_definition_sources(definition, ::Bundler.definition)
           end
         end
@@ -39,7 +41,7 @@ module Rys
         plugin_dependencies = plugin_dependencies.uniq(&:name)
         plugin_dependencies.reject! do |dep1|
           dependencies.any? do |dep2|
-            dep1.name == dep2.name
+            dep1.name == dep2.name && !dep2.groups.include?(:__dependecies__)
           end
         end
 
@@ -57,14 +59,15 @@ module Rys
       end
 
       def self.rys_gemfile(dsl)
-        # TODO: Make more bullet-proof test
-        if ::Bundler.const_defined?('CLI')
-          # Some cli commands
-          return
-        end
-
         if dependencies_rb.exist?
-          dsl.eval_gemfile(dependencies_rb)
+          # Mark gems as dependencies to be rewritten in hook
+          # Because you dont know if:
+          #   - gems are loaded for rails
+          #   - running bundle install
+          #   - bundle exec
+          dsl.group(:__dependecies__) do
+            dsl.eval_gemfile(dependencies_rb)
+          end
         end
       end
 
