@@ -12,3 +12,7 @@ end
 Bundler::Plugin.add_hook('rys-gemfile') do |dsl|
   Rys::Bundler::Hooks.rys_gemfile(dsl)
 end
+
+Bundler::Plugin.add_hook('rys-load-dummy') do |dsl|
+  Rys::Bundler::Hooks.rys_load_dummy(dsl)
+end
