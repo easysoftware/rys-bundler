@@ -73,12 +73,21 @@ module Rys
       end
 
       def self.rys_gemfile(dsl)
+        # Loading dependecies brings some troubles. For example if main
+        # app add a gem which already exist as dependecies. There could
+        # be conflicts. To avoid some of problems - dependencies are
+        # loaded only if there is not a lock file (bundler wasn't
+        # launched or user want force install).
+        return if !::Bundler.root.join('gems.locked').exist?
+        return if !::Bundler.root.join('Gemfile.lock').exist?
+
         if gems_dependencies_rb.exist?
-          # Mark gems as dependencies to be rewritten in hook
+          # Mark gems as dependencies to be rewritten in a hook
           # Because you dont know if:
           #   - gems are loaded for rails
           #   - running bundle install
           #   - bundle exec
+          #   - or something else
           dsl.group(:__dependecies__) do
             dsl.eval_gemfile(gems_dependencies_rb)
           end
@@ -89,7 +98,7 @@ module Rys
         possible_app_dirs = [
           dummy_path,
           ENV['DUMMY_PATH'],
-          ::Bundler.root.join('spec/dummy')
+          ::Bundler.root.join('test/dummy')
         ]
 
         possible_app_dirs.each do |dir|
