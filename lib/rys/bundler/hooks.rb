@@ -78,8 +78,7 @@ module Rys
         # be conflicts. To avoid some of problems - dependencies are
         # loaded only if there is not a lock file (bundler wasn't
         # launched or user want force install).
-        return if !::Bundler.root.join('gems.locked').exist?
-        return if !::Bundler.root.join('Gemfile.lock').exist?
+        return if !::Bundler.root.join('gems.locked').exist? && !::Bundler.root.join('Gemfile.lock').exist?
 
         if gems_dependencies_rb.exist?
           # Mark gems as dependencies to be rewritten in a hook
