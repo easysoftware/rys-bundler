@@ -138,15 +138,30 @@ module Rys
           f.puts
 
           dependencies.each do |dep|
+            options = {}
+
             source = dep.source
             case source
             when ::Bundler::Source::Git
-              f.puts %{gem '#{dep.name}', git: '#{source.uri}', branch: '#{source.branch}', ref: '#{source.ref}', groups: #{dep.groups}}
+              options[:git] = source.uri
+              options[:branch] = source.branch
+              options[:ref] = source.ref
             when NilClass
-              f.puts %{gem '#{dep.name}', groups: #{dep.groups}}
+              # Regular gem
             else
               raise "Unknow source '#{source.class}'"
             end
+
+            args = []
+            args << dep.name
+            args.concat(dep.requirement.as_list)
+
+            options[:groups] = dep.groups
+            options[:require] = dep.autorequire if dep.autorequire
+
+            gem_args = args.map{|arg| '"' + arg + '"' }.join(', ')
+
+            f.puts %{gem #{gem_args}, #{options}}
           end
         end
       end
