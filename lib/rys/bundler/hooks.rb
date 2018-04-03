@@ -161,7 +161,10 @@ module Rys
 
             gem_args = args.map{|arg| '"' + arg + '"' }.join(', ')
 
-            f.puts %{gem #{gem_args}, #{options}}
+            f.puts %{if dependencies.none?{|dep| dep.name.to_s == "#{dep.name}" }}
+            f.puts %{  gem #{gem_args}, #{options}}
+            f.puts %{end}
+            f.puts
           end
         end
       end
