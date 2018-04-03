@@ -10,4 +10,6 @@ Gem::Specification.new do |spec|
 
   lib_files = Dir.chdir(__dir__){ Dir.glob('lib/**/*') }
   spec.files = lib_files + ['README.md']
+
+  spec.add_dependency 'tty-prompt'
 end
