@@ -9,6 +9,13 @@ module Rys
           options.submodules = false
           options.redmine_plugin = nil
 
+          parse_options
+          prepare_target
+          prepare_dependencies
+          build
+        end
+
+        def parse_options
           @option_parser = OptionParser.new do |opts|
             opts.banner = 'Usage: bundle rys build [options]'
 
@@ -22,7 +29,6 @@ module Rys
 
             opts.on('-s', '--submodules', 'Add gems as submodules (experimental)') do |value|
               options.submodules = value
-
               abort('Not yet implemented')
             end
 
@@ -41,7 +47,9 @@ module Rys
             end
           end
           @option_parser.parse(@args)
+        end
 
+        def prepare_target
           if options.redmine_plugin&.directory?
             @redmine_plugin = options.redmine_plugin
           else
@@ -57,17 +65,17 @@ module Rys
           end
 
           FileUtils.mkdir_p(@target)
+        end
 
+        def prepare_dependencies
           @dependencies = ::Bundler.load.dependencies.select do |dependency|
             dependency.groups.include?(:rys)
           end
 
           @gem_name_ljust = @dependencies.map{|d| d.name.size }.max + 4
-
-          build
         end
 
-        def gem_from_git(dependency, source, path)
+        def build_gem_from_git(dependency, source, path)
           if options.deployment
             if source.send(:local?)
               FileUtils.cp_r(source.path, path)
@@ -89,7 +97,7 @@ module Rys
           end
         end
 
-        def gem_from_path(dependency, source, path)
+        def build_gem_from_path(dependency, source, path)
           if options.deployment
             FileUtils.cp_r(source.path, path)
             print_dependency_status(dependency, 'copied')
@@ -117,11 +125,11 @@ module Rys
 
             case source
             when ::Bundler::Source::Git
-              gem_from_git(dependency, source, path)
+              build_gem_from_git(dependency, source, path)
               new_gems_names << dependency.name
 
             when ::Bundler::Source::Path
-              gem_from_path(dependency, source, path)
+              build_gem_from_path(dependency, source, path)
               new_gems_names << dependency.name
 
             else
