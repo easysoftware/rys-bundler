@@ -13,21 +13,15 @@ module Rys
 
           case action
           when 'build'
-            build_local(args)
+            Build.new(args).run
           # when 'add'
           #   Add.new(args).run
           when ''
-            build_local(args)
+            Build.new(args).run
           else
             raise "Unknow action '#{action}'"
           end
         end
-
-        private
-
-          def build_local(args)
-            Build.new(args).build_local
-          end
 
       end
     end

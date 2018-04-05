@@ -1,11 +1,19 @@
+require 'open3'
+require 'ostruct'
+require 'optparse'
+require 'tty-prompt'
+
 module Rys
   module Bundler
     module Commands
       class Base
         include ::Rys::Bundler::Helper
 
+         attr_reader :args, :options
+
         def initialize(args)
           @args = args
+          @options = OpenStruct.new
         end
 
         def prompt
@@ -20,7 +28,11 @@ module Rys
           ::Bundler.ui
         end
 
-        def run(command)
+        def run
+          raise NotImplementedError
+        end
+
+        def command(command)
           output, status = Open3.capture2e(command)
 
           if !status.success?
@@ -29,15 +41,15 @@ module Rys
           end
         end
 
-        def ensure_redmine_plugin
+        def get_redmine_plugin!
           plugins_dir = Pathname.pwd.join('plugins')
           plugins = Pathname.glob(plugins_dir.join('*/rys.rb'))
 
           case plugins.size
           when 0
-            raise 'There is no redmine plugin for rys plugins. Please run "rails generate rys:redmine:plugin NAME"'
+            raise 'There is no redmine plugin for rys gems. Please run "rails generate rys:redmine:plugin NAME"'
           when 1
-            @redmine_plugin = plugins.first.dirname
+            return plugins.first.dirname
           else
             raise 'There are more than one redmine plugin for rys plugins.'
           end
