@@ -2,7 +2,7 @@ $:.push File.expand_path('lib', __dir__)
 require 'rys/bundler'
 
 # Commands
-Bundler::Plugin.add_command('rys', Rys::Bundler::Commands::Rys)
+Bundler::Plugin.add_command('rys', Rys::Bundler::Command)
 
 # Hooks
 Bundler::Plugin.add_hook('before-install-all') do |dependencies|

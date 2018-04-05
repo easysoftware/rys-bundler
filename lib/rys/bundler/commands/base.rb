@@ -9,11 +9,8 @@ module Rys
       class Base
         include ::Rys::Bundler::Helper
 
-         attr_reader :args, :options
-
-        def initialize(args)
-          @args = args
-          @options = OpenStruct.new
+        def self.run(args)
+          raise NotImplementedError
         end
 
         def prompt
