@@ -116,7 +116,8 @@ module Rys
             ui.info pastel.bold('Commenting gems')
             ::Bundler.definition.gemfiles.each do |gemfile|
               count = comment_lines(gemfile, patterns)
-              ui.info "* #{gemfile.basename}: #{count} occurrences"
+              gemfile_name = gemfile.each_filename.to_a.last(2).join('/')
+              ui.info "* #{gemfile_name}: #{count} occurrences"
             end
           end
 
