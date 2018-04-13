@@ -9,6 +9,11 @@ module Rys
           next if !dependency.groups.include?(:rys)
           next if !dependency.source
 
+          # Main gemfile could contains gems which depends on the same dependecies
+          if new_dependencies.any?{|nd| nd.name == dependency.name }
+            next
+          end
+
           # To allow resolving
           dependency.source.remote!
 
