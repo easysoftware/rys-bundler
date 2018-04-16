@@ -11,7 +11,7 @@ module Rys
 
           # Main gemfile could contains gems which depends on the same dependecies
           if new_dependencies.any?{|nd| nd.name == dependency.name }
-            next
+            # next
           end
 
           # To allow resolving
