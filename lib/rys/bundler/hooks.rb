@@ -3,15 +3,15 @@ module Rys
     module Hooks
 
       # Recursively searches for dependencies
-      # If there will be sane dependecies => first won
-      def self.dependencies_from_dependencies(dependencies, new_dependencies)
+      # If there will be same dependecies => first won
+      def self.dependencies_from_dependencies(dependencies, new_dependencies, resolved_dependecies)
         dependencies.each do |dependency|
           next if !dependency.groups.include?(:rys)
           next if !dependency.source
 
           # Main gemfile could contains gems which depends on the same dependecies
-          if new_dependencies.any?{|nd| nd.name == dependency.name }
-            # next
+          if resolved_dependecies.any?{|nd| nd.name == dependency.name }
+            next
           end
 
           # To allow resolving
@@ -28,11 +28,12 @@ module Rys
             rys_dependecies = definition.dependencies.select{|dep| dep.groups.include?(:rys) }
 
             rys_dependecies.reject! do |rys_dependecy|
-              new_dependencies.any? {|nd| nd.name == rys_dependecy.name }
+              new_dependencies.any?{|nd| nd.name == rys_dependecy.name }
             end
 
             new_dependencies.concat(rys_dependecies)
-            dependencies_from_dependencies(rys_dependecies, new_dependencies)
+            resolved_dependecies << dependency
+            dependencies_from_dependencies(rys_dependecies, new_dependencies, resolved_dependecies)
 
             # TODO: Maybe this should be done after `dependencies.concat`
             merge_definition_sources(definition, ::Bundler.definition)
@@ -51,7 +52,8 @@ module Rys
       #
       def self.before_install_all(dependencies)
         new_dependencies = []
-        dependencies_from_dependencies(dependencies, new_dependencies)
+        resolved_dependecies = []
+        dependencies_from_dependencies(dependencies, new_dependencies, resolved_dependecies)
 
         # Select only missing dependecies so user can
         # rewrite each dependecny in main gems.rb
