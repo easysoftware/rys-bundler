@@ -36,7 +36,9 @@ module Rys
             dependencies_from_dependencies(rys_dependecies, new_dependencies, resolved_dependecies)
 
             # TODO: Maybe this should be done after `dependencies.concat`
-            merge_definition_sources(definition, ::Bundler.definition)
+            # merge_definition_sources(definition, ::Bundler.definition)
+
+            add_source_definition(dependency, ::Bundler.definition)
           end
         end
       end
@@ -135,6 +137,18 @@ module Rys
           rescue
           end
         end
+      end
+
+      def self.add_source_definition(dependency, to_definition)
+        sources = to_definition.send(:sources).send(:source_list_for, dependency.source)
+
+        if sources.include?(dependency.source)
+          # Already there
+        else
+          sources << dependency.source
+        end
+      rescue
+        # Bunlder could raise an ArgumentError
       end
 
       def self.save_new_dependencies(dependencies)
