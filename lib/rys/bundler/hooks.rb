@@ -3,7 +3,7 @@
 # (except it is even worse)
 #
 # You have to ensure that local dependencies (gemfile: `path: '...'`) are
-# resolved prior to remote dependecies (gemfile: `git: '...'`) because not
+# resolved prior to remote dependencies (gemfile: `git: '...'`) because not
 # all users have rights for the repository (that is why packages are created).
 #
 #   gems.rb
@@ -28,14 +28,14 @@ module Rys
   module Bundler
     module Hooks
 
-      def self.prepare_dependecies_for_next_round(dependencies, resolved_dependecies)
+      def self.prepare_dependencies_for_next_round(dependencies, resolved_dependencies)
         dependencies = dependencies.dup
 
-        # Prepare dependecies
+        # Prepare dependencies
         dependencies.keep_if do |dependency|
           dependency.groups.include?(:rys) &&
           dependency.source &&
-          resolved_dependecies.none?{|rd| rd.name == dependency.name }
+          resolved_dependencies.none?{|rd| rd.name == dependency.name }
         end
 
         # Sort them to prior local dependencies
@@ -57,24 +57,24 @@ module Rys
           end
         end
 
-        # More dependecies can depend on the same dependencies :-)
+        # More dependencies can depend on the same dependencies :-)
         dependencies.uniq!(&:name)
 
         return dependencies
       end
 
       # Recursively searches for dependencies
-      # If there will be same dependecies => first won
+      # If there will be same dependencies => first won
       #
       # == Arguments:
       # dependencies:: Array of dependencies which should be resolved
       # new_dependencies:: All dependencies from resolving
       #                    Array is in-place modified
-      # resolved_dependecies:: Already resolved dependecies
+      # resolved_dependencies:: Already resolved dependencies
       #                        For preventing loops
       #
-      def self.resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependecies)
-        dependencies = prepare_dependecies_for_next_round(dependencies, resolved_dependecies)
+      def self.resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependencies)
+        dependencies = prepare_dependencies_for_next_round(dependencies, resolved_dependencies)
 
         # Resolving is done in next round
         next_dependencies_to_resolve = []
@@ -86,23 +86,23 @@ module Rys
           # Ensure gem (downloaded if necessary)
           dependency.source.specs
 
-          # Get dependecies from this file using rys group
+          # Get dependencies from this file using rys group
           dependencies_rb = dependency.source.path.join('dependencies.rb')
 
           if dependencies_rb.exist?
             definition = ::Bundler::Dsl.evaluate(dependencies_rb, ::Bundler.default_lockfile, true)
-            rys_group_dependecies = definition.dependencies.select{|dep| dep.groups.include?(:rys) }
+            rys_group_dependencies = definition.dependencies.select{|dep| dep.groups.include?(:rys) }
 
-            new_dependencies.concat(rys_group_dependecies)
-            next_dependencies_to_resolve.concat(rys_group_dependecies)
+            new_dependencies.concat(rys_group_dependencies)
+            next_dependencies_to_resolve.concat(rys_group_dependencies)
           end
 
-          resolved_dependecies << dependency
+          resolved_dependencies << dependency
           add_source_definition(dependency, ::Bundler.definition)
         end
 
         if next_dependencies_to_resolve.size > 0
-          resolve_rys_dependencies(next_dependencies_to_resolve, new_dependencies, resolved_dependecies)
+          resolve_rys_dependencies(next_dependencies_to_resolve, new_dependencies, resolved_dependencies)
         end
       end
 
@@ -117,23 +117,23 @@ module Rys
       #
       def self.before_install_all(dependencies)
         new_dependencies = []
-        resolved_dependecies = []
+        resolved_dependencies = []
 
-        # dependencies_from_dependencies(dependencies, new_dependencies, resolved_dependecies)
-        resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependecies)
+        # dependencies_from_dependencies(dependencies, new_dependencies, resolved_dependencies)
+        resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependencies)
 
-        # Select only missing dependecies so user can
+        # Select only missing dependencies so user can
         # rewrite each dependecny in main gems.rb
         new_dependencies = new_dependencies.uniq(&:name)
         new_dependencies.reject! do |dep1|
           dependencies.any? do |dep2|
-            dep1.name == dep2.name && !dep2.groups.include?(:__dependecies__)
+            dep1.name == dep2.name && !dep2.groups.include?(:__dependencies__)
           end
         end
 
         ::Bundler.ui.info "Added #{new_dependencies.size} new dependencies"
 
-        # Concat them to main Bundler.definition.dependecies
+        # Concat them to main Bundler.definition.dependencies
         dependencies.concat(new_dependencies)
 
         # Save them for Bundler.require (rails config/boot.rb)
@@ -147,8 +147,8 @@ module Rys
       end
 
       def self.rys_gemfile(dsl)
-        # Loading dependecies brings some troubles. For example if main
-        # app add a gem which already exist as dependecies. There could
+        # Loading dependencies brings some troubles. For example if main
+        # app add a gem which already exist as dependencies. There could
         # be conflicts. To avoid some of problems - dependencies are
         # loaded only if there is not a lock file (bundler wasn't
         # launched or user want force install).
@@ -161,7 +161,7 @@ module Rys
           #   - running bundle install
           #   - bundle exec
           #   - or something else
-          dsl.group(:__dependecies__) do
+          dsl.group(:__dependencies__) do
             dsl.eval_gemfile(gems_dependencies_rb)
           end
         end
