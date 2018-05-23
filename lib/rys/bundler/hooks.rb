@@ -1,23 +1,89 @@
+##
+# Dependencies tree can look like this
+# (except it is even worse)
+#
+# You have to ensure that local dependencies (gemfile: `path: '...'`) are
+# resolved prior to remote dependecies (gemfile: `git: '...'`) because not
+# all users have rights for the repository (that is why packages are created).
+#
+#   gems.rb
+#   |-- easy_twofa (local)
+#   |   |-- rys (remote)
+#   |   `-- easy_core (remote)
+#   |-- easy_contacts (local)
+#   |   |-- easy_query (remote)
+#   |   |   |-- rys (remote)
+#   |   |   `-- easy_core(remote)
+#   |   |-- rys (remote)
+#   |   `-- easy_core (remote)
+#   |-- rys (local)
+#   |-- easy_core (local)
+#   |   `-- rys (remote)
+#   |-- tty-prompt (remote)
+#   `-- easy_query (local)
+#       |-- easy_core (remote)
+#       `-- rys (remote)
+#
 module Rys
   module Bundler
     module Hooks
 
+      def self.prepare_dependecies_for_next_round(dependencies, resolved_dependecies)
+        dependencies = dependencies.dup
+
+        # Prepare dependecies
+        dependencies.keep_if do |dependency|
+          dependency.groups.include?(:rys) &&
+          dependency.source &&
+          resolved_dependecies.none?{|rd| rd.name == dependency.name }
+        end
+
+        # Sort them to prior local dependencies
+        dependencies.sort_by! do |dependency|
+          case dependency.source
+          # Git should be first because its inherit from Path
+          when ::Bundler::Source::Git
+            if dependency.source.send(:local?)
+              1
+            else
+              3
+            end
+          # Local path
+          when ::Bundler::Source::Path
+            0
+          # Rubygems, gemspec, metadata
+          else
+            2
+          end
+        end
+
+        # More dependecies can depend on the same dependencies :-)
+        dependencies.uniq!(&:name)
+
+        return dependencies
+      end
+
       # Recursively searches for dependencies
       # If there will be same dependecies => first won
-      def self.dependencies_from_dependencies(dependencies, new_dependencies, resolved_dependecies)
+      #
+      # == Arguments:
+      # dependencies:: Array of dependencies which should be resolved
+      # new_dependencies:: All dependencies from resolving
+      #                    Array is in-place modified
+      # resolved_dependecies:: Already resolved dependecies
+      #                        For preventing loops
+      #
+      def self.resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependecies)
+        dependencies = prepare_dependecies_for_next_round(dependencies, resolved_dependecies)
+
+        # Resolving is done in next round
+        next_dependencies_to_resolve = []
+
         dependencies.each do |dependency|
-          next if !dependency.groups.include?(:rys)
-          next if !dependency.source
-
-          # Main gemfile could contains gems which depends on the same dependecies
-          if resolved_dependecies.any?{|nd| nd.name == dependency.name }
-            next
-          end
-
           # To allow resolving
           dependency.source.remote!
 
-          # Ensure gem
+          # Ensure gem (downloaded if necessary)
           dependency.source.specs
 
           # Get dependecies from this file using rys group
@@ -25,21 +91,18 @@ module Rys
 
           if dependencies_rb.exist?
             definition = ::Bundler::Dsl.evaluate(dependencies_rb, ::Bundler.default_lockfile, true)
-            rys_dependecies = definition.dependencies.select{|dep| dep.groups.include?(:rys) }
+            rys_group_dependecies = definition.dependencies.select{|dep| dep.groups.include?(:rys) }
 
-            rys_dependecies.reject! do |rys_dependecy|
-              new_dependencies.any?{|nd| nd.name == rys_dependecy.name }
-            end
-
-            new_dependencies.concat(rys_dependecies)
-            resolved_dependecies << dependency
-            dependencies_from_dependencies(rys_dependecies, new_dependencies, resolved_dependecies)
-
-            # TODO: Maybe this should be done after `dependencies.concat`
-            # merge_definition_sources(definition, ::Bundler.definition)
-
-            add_source_definition(dependency, ::Bundler.definition)
+            new_dependencies.concat(rys_group_dependecies)
+            next_dependencies_to_resolve.concat(rys_group_dependecies)
           end
+
+          resolved_dependecies << dependency
+          add_source_definition(dependency, ::Bundler.definition)
+        end
+
+        if next_dependencies_to_resolve.size > 0
+          resolve_rys_dependencies(next_dependencies_to_resolve, new_dependencies, resolved_dependecies)
         end
       end
 
@@ -55,7 +118,9 @@ module Rys
       def self.before_install_all(dependencies)
         new_dependencies = []
         resolved_dependecies = []
-        dependencies_from_dependencies(dependencies, new_dependencies, resolved_dependecies)
+
+        # dependencies_from_dependencies(dependencies, new_dependencies, resolved_dependecies)
+        resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependecies)
 
         # Select only missing dependecies so user can
         # rewrite each dependecny in main gems.rb
@@ -148,7 +213,7 @@ module Rys
           sources << dependency.source
         end
       rescue
-        # Bunlder could raise an ArgumentError
+        # Bundler could raise an ArgumentError
       end
 
       def self.save_new_dependencies(dependencies)
