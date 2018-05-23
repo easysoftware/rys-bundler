@@ -28,41 +28,6 @@ module Rys
   module Bundler
     module Hooks
 
-      def self.prepare_dependencies_for_next_round(dependencies, resolved_dependencies)
-        dependencies = dependencies.dup
-
-        # Prepare dependencies
-        dependencies.keep_if do |dependency|
-          dependency.groups.include?(:rys) &&
-          dependency.source &&
-          resolved_dependencies.none?{|rd| rd.name == dependency.name }
-        end
-
-        # Sort them to prior local dependencies
-        dependencies.sort_by! do |dependency|
-          case dependency.source
-          # Git should be first because its inherit from Path
-          when ::Bundler::Source::Git
-            if dependency.source.send(:local?)
-              1
-            else
-              3
-            end
-          # Local path
-          when ::Bundler::Source::Path
-            0
-          # Rubygems, gemspec, metadata
-          else
-            2
-          end
-        end
-
-        # More dependencies can depend on the same dependencies :-)
-        dependencies.uniq!(&:name)
-
-        return dependencies
-      end
-
       # Recursively searches for dependencies
       # If there will be same dependencies => first won
       #
@@ -118,8 +83,6 @@ module Rys
       def self.before_install_all(dependencies)
         new_dependencies = []
         resolved_dependencies = []
-
-        # dependencies_from_dependencies(dependencies, new_dependencies, resolved_dependencies)
         resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependencies)
 
         # Select only missing dependencies so user can
@@ -191,6 +154,41 @@ module Rys
 
       def self.gems_dependencies_rb
         ::Bundler.root.join('gems.dependencies.rb')
+      end
+
+      def self.prepare_dependencies_for_next_round(dependencies, resolved_dependencies)
+        dependencies = dependencies.dup
+
+        # Prepare dependencies
+        dependencies.keep_if do |dependency|
+          dependency.groups.include?(:rys) &&
+          dependency.source &&
+          resolved_dependencies.none?{|rd| rd.name == dependency.name }
+        end
+
+        # Sort them to prior local dependencies
+        dependencies.sort_by! do |dependency|
+          case dependency.source
+          # Git should be first because its inherit from Path
+          when ::Bundler::Source::Git
+            if dependency.source.send(:local?)
+              1
+            else
+              3
+            end
+          # Local path
+          when ::Bundler::Source::Path
+            0
+          # Rubygems, gemspec, metadata
+          else
+            2
+          end
+        end
+
+        # More dependencies can depend on the same dependencies :-)
+        dependencies.uniq!(&:name)
+
+        return dependencies
       end
 
       def self.merge_definition_sources(from_definition, to_definition)
