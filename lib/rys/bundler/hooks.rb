@@ -63,7 +63,7 @@ module Rys
           end
 
           resolved_dependencies << dependency
-          add_source_definition(dependency, ::Bundler.definition)
+          # add_source_definition(dependency, ::Bundler.definition)
         end
 
         if next_dependencies_to_resolve.size > 0
@@ -92,6 +92,14 @@ module Rys
           dependencies.any? do |dep2|
             dep1.name == dep2.name && !dep2.groups.include?(:__dependencies__)
           end
+        end
+
+        # Adding sources from new dependecies
+        # Needef for Path or Git
+        new_dependencies.each do |dependency|
+          next if !dependency.source
+          sources = ::Bundler.definition.send(:sources).send(:source_list_for, dependency.source)
+          sources << dependency.source
         end
 
         ::Bundler.ui.info "Added #{new_dependencies.size} new dependencies"
