@@ -2,12 +2,29 @@
 
 The best way how to install dependecies from Rys plugins.
 
+This plugin allows you to define dependecies on external gems using bundler gemfile (with all possibilities) and not just .gemspec. For example
+
+```
+my_project
+  `-- gems.rb
+      |-- external_gem_1
+      |   |-- lib
+      |   `-- dependecies.rb
+      `-- external_gem_2
+          |-- lib
+          `-- dependecies.rb
+```
+
+Normally you can use somethin like `gem 'rys', github: 'easysoftware/rys'` inside `external_gem_1` to be used in `my_project`.
+
+You can do it with this plugin.
+
 ## Install
 
 Add this line to your application's Gemfile or gems.rb:
 
 ```ruby
-plugin 'rys-bundler'
+plugin 'rys-bundler', github: 'easysoftware/rys-bundler', branch: 'master'
 
 Plugin.hook('rys-gemfile', self)
 ```
@@ -16,8 +33,8 @@ And then execute:
 
 ```
 $ bundle
-``` 
-    
+```
+
 Bundle command will create `gems.dependencies.rb` at your application root.
 
 ## Usage
@@ -27,7 +44,7 @@ Application's **Gemfile** or **gems.rb** file.
 All gems which should be resolved for dependencies must be in group `rys`.
 
 ```ruby
-plugin 'rys-bundler'
+plugin 'rys-bundler', github: 'easysoftware/rys-bundler', branch: 'master'
 Plugin.hook('rys-gemfile', self)
 
 group :default, :rys do
@@ -56,3 +73,24 @@ end
 
 ```
 
+## Builder
+
+To download/copy/symlink all rys dependecies into your project directory.
+
+This command works only on Redmine enviroment.
+
+First you need to generate plugin `rails generate rys:redmine:plugin PLUGIN_NAME`
+
+`bundle rys build`
+- remote git: clone into plugins/PLUGIN_NAME/local
+- local path: symlink into plugins/PLUGIN_NAME/local
+
+`bundle rys build --deployment`
+- remote git: clone into plugins/PLUGIN_NAME/local
+- local path: copy into plugins/PLUGIN_NAME/local
+
+`bundle rys build --revert`
+- revert
+
+`bundle rys build --deployment --revert`
+- revert
