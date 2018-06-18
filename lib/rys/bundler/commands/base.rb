@@ -7,7 +7,6 @@ module Rys
   module Bundler
     module Commands
       class Base
-        include ::Rys::Bundler::Helper
 
         def self.run(args)
           raise NotImplementedError

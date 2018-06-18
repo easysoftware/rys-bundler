@@ -10,10 +10,10 @@ module Rys
         def build_gem_from_git(dependency, source, path)
           if source.send(:local?)
             FileUtils.cp_r(source.path, path)
-            print_dependency_status(dependency, 'copied')
+            print_gem_status(dependency.name, 'copied')
           else
             command %{git clone --depth=1 --branch="#{source.branch}" "#{source.uri}" "#{path}"}
-            print_dependency_status(dependency, 'clonned')
+            print_gem_status(dependency.name, 'clonned')
           end
 
           FileUtils.rm_rf(path.join('.git'))
@@ -21,7 +21,7 @@ module Rys
 
         def build_gem_from_path(dependency, source, path)
           FileUtils.cp_r(source.path, path)
-          print_dependency_status(dependency, 'copied')
+          print_gem_status(dependency.name, 'copied')
         end
 
       end

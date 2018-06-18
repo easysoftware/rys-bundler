@@ -3,7 +3,6 @@ require 'rys/bundler/version'
 module Rys
   module Bundler
     autoload :Hooks,   'rys/bundler/hooks'
-    autoload :Helper,  'rys/bundler/helper'
     autoload :Command, 'rys/bundler/command'
 
     module Commands
