@@ -116,11 +116,11 @@ module Rys
             @dependencies = all_dependencies.select do |dependency|
               dependency.groups.include?(:rys)
             end
-            @dependency_ljust = @dependencies.map{|d| d.name.size }.max + 4
+            @dependency_ljust = @dependencies.map{|d| d.name.size }.max.to_i + 4
           end
 
           def prepare_to_delete
-            @dependency_ljust = build_report.keys.map{|d| d.size }.max + 4
+            @dependency_ljust = build_report.keys.map{|d| d.size }.max.to_i + 4
           end
 
           # Copy/clone/symlink/... all dependencies into proper directory
