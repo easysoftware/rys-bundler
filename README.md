@@ -73,3 +73,24 @@ end
 
 ```
 
+## Builder
+
+To download/copy/symlink all rys dependecies into your project directory.
+
+This command works only on Redmine enviroment.
+
+First you need to generate plugin `rails generate rys:redmine:plugin PLUGIN_NAME`
+
+`bundle rys build`
+- remote git: clone into plugins/PLUGIN_NAME/local
+- local path: symlink into plugins/PLUGIN_NAME/local
+
+`bundle rys build --deployment`
+- remote git: clone into plugins/PLUGIN_NAME/local
+- local path: copy into plugins/PLUGIN_NAME/local
+
+`bundle rys build --revert`
+- revert
+
+`bundle rys build --deployment --revert`
+- revert
