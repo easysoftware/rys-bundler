@@ -138,6 +138,9 @@ module Rys
         end
       end
 
+      # Load gems from dummy path
+      # Conflicts are ingnored
+      #
       def self.rys_load_dummy(dsl, dummy_path=nil)
         possible_app_dirs = [
           dummy_path,
@@ -153,7 +156,30 @@ module Rys
             gems_rb = File.expand_path(File.join(dir, gems_rb))
 
             if File.exist?(gems_rb)
-              dsl.eval_gemfile(gems_rb)
+              dsl.instance_eval do
+
+                # Patch method `gem` to avoid duplicit definition
+                # For example you can test rys 'ondra' but its
+                # already included in main app gemfile.
+                if is_a?(::Bundler::Plugin::DSL)
+                  # gem methods is not defined here
+                else
+                  singleton_class.class_eval do
+                    alias_method :original_gem, :gem
+                  end
+
+                  def gem(name, *args)
+                    if @dependencies.any? {|d| d.name == name }
+                      ::Bundler.ui.info "Skipping gem '#{name}' because already exist"
+                    else
+                      original_gem(name, *args)
+                    end
+                  end
+                end
+
+                eval_gemfile(gems_rb)
+              end
+
               return
             end
           end
