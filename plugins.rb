@@ -9,6 +9,12 @@ Bundler::Plugin.add_hook('before-install-all') do |dependencies|
   Rys::Bundler::Hooks.before_install_all(dependencies)
 end
 
+# Because of bundler >= 1.17
+if defined?(Bundler::Plugin::Events)
+  Bundler::Plugin::Events.send(:define, :RYS_GEMFILE, 'rys-gemfile')
+  Bundler::Plugin::Events.send(:define, :RYS_LOAD_DUMMY, 'rys-load-dummy')
+end
+
 Bundler::Plugin.add_hook('rys-gemfile') do |dsl|
   Rys::Bundler::Hooks.rys_gemfile(dsl)
 end
