@@ -83,7 +83,11 @@ module Rys
       def self.before_install_all(dependencies)
         new_dependencies = []
         resolved_dependencies = []
-        resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependencies)
+
+        # To avoid multiple `git clone` on the same folder
+        ::Bundler::ProcessLock.lock do
+          resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependencies)
+        end
 
         # Select only missing dependencies so user can
         # rewrite each dependecny in main gems.rb
