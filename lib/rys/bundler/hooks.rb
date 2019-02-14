@@ -84,8 +84,16 @@ module Rys
         new_dependencies = []
         resolved_dependencies = []
 
+        # If you are using a `--path` option {Bundler.bundle_path} may
+        # not exist yet because of first bundle run
+        if Dir.exist?(::Bundler.bundle_path)
+          lock_dir = ::Bundler.bundle_path
+        else
+          lock_dir = Dir.pwd
+        end
+
         # To avoid multiple `git clone` on the same folder
-        ::Bundler::ProcessLock.lock do
+        ::Bundler::ProcessLock.lock(lock_dir) do
           resolve_rys_dependencies(dependencies, new_dependencies, resolved_dependencies)
         end
 
